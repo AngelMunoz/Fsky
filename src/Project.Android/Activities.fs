@@ -17,10 +17,12 @@ open Library
               ||| ConfigChanges.ScreenSize
               ||| ConfigChanges.UiMode))>]
 type MainActivity() =
-  inherit AvaloniaMainActivity<App>()
+  inherit AvaloniaMainActivity<Application>()
 
-  override _.CustomizeAppBuilder(builder) =
-    base
-      .CustomizeAppBuilder(builder)
+  override _.CustomizeAppBuilder _ =
+    AppBuilder
+      .Configure<Application>(fun _ -> App())
+      .UseAndroid()
+      .UseReactiveUI()
       .WithInterFont()
       .UseReactiveUI()

@@ -2,7 +2,6 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
-    <LangVersion>latest</LangVersion>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
   </PropertyGroup>
 
@@ -11,6 +10,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="Extensions.fs" />
+    <Compile Include="Views\Home.fs" />
+    <Compile Include="Views/Main.fs" />
     <Compile Include="Library.fs" />
   </ItemGroup>
 
@@ -21,6 +23,8 @@
     <PackageReference Include="Avalonia.ReactiveUI" Version="$(AvaloniaVersion)" />
     <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
     <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="$(AvaloniaVersion)" />
+    <PackageReference Include="Navs" Version="1.0.0-rc-001" />
+    <PackageReference Include="Navs.Avalonia" Version="1.0.0-rc-001" />
 
     <PackageReference Include="NXUI" Version="$(NXUIVersion)" />
     <PackageReference Include="NXUI.FSharp" Version="$(NXUIVersion)" />

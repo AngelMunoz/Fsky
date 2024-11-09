@@ -1,57 +1,46 @@
 namespace Library
 
-open FSharp.Control.Reactive
-open FSharp.Control.Reactive.Builders
-
 open Avalonia
-open Avalonia.Data
 open Avalonia.Controls
 open Avalonia.Controls.ApplicationLifetimes
 open Avalonia.Themes.Fluent
 
 open NXUI.FSharp.Extensions
+open Navs
+open Navs.Avalonia
 
-module View =
-  let Content () : Control =
-    let counter = Subject.behavior 0
+open Library.Views
 
-    let counterText = observe {
-      let! contents = counter
-      $"You clicked {contents} times"
-    }
 
-    let incrementOnClick _ _ = counter.OnNext(counter.Value + 1)
+module Routes =
 
-    StackPanel()
-      .children(
-        Button()
-          .content("Click me!!")
-          .OnClickHandler(incrementOnClick),
-        TextBlock()
-          .text(counterText, BindingMode.OneWay)
-      )
+  let build() =
+      AvaloniaRouter([
+        Route.define<Control>("home", "/", Home.view)
+      ])
 
 
 type App() =
   inherit Application()
 
+  let router = Routes.build()
+  let mainView = Main.Content router
+
   override this.Initialize() =
     this.Styles.Add(FluentTheme())
-    this.RequestedThemeVariant <- Styling.ThemeVariant.Dark
 
   override this.OnFrameworkInitializationCompleted() =
     match this.ApplicationLifetime with
     | :? IClassicDesktopStyleApplicationLifetime as desktopLifetime ->
       let window =
         Window()
-          .title("NXUI and F#")
-          .width(300)
-          .height(300)
-          .content(View.Content())
+          .width(420)
+          .height(420)
+          .content(mainView)
 
       desktopLifetime.MainWindow <- window
     | :? ISingleViewApplicationLifetime as singleViewLifetime ->
-      singleViewLifetime.MainView <- View.Content()
+      singleViewLifetime.MainView <- mainView
     | _ -> ()
 
     base.OnFrameworkInitializationCompleted()
