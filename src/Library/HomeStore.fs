@@ -1,4 +1,4 @@
-module Library.Stores.Home
+module Library.Stores
 
 open System
 open System.ComponentModel
@@ -28,18 +28,25 @@ module HomeStore =
   let create (Jetstream js) =
     let posts = ObservableCollection<Post>()
     let mutable cts = new CancellationTokenSource()
-    let resetCts() =
+
+    let resetCts () =
       if not cts.IsCancellationRequested then
         cts.Cancel()
-      try 
+
+      try
         cts.Dispose()
-      with _ -> ()
+      with _ ->
+        ()
 
       cts <- new CancellationTokenSource()
 
-    let getEventStream() =
+    let getEventStream () =
       resetCts()
-      js.toObservable("wss://jetstream1.us-east.bsky.network/subscribe?wantedCollections=app.bsky.feed.post", cts.Token)
+
+      js.toObservable(
+        "wss://jetstream1.us-east.bsky.network/subscribe?wantedCollections=app.bsky.feed.post",
+        cts.Token
+      )
       |> Observable.sample(TimeSpan.FromSeconds(1))
 
     {

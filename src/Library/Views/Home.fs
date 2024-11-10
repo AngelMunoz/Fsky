@@ -6,8 +6,9 @@ open NXUI.Extensions
 open NXUI.FSharp.Extensions
 
 open Library.Env
+open Library.Stores
 
-let view (Jetstream js) _ _ : Async<Control> = async {
+let view (hs: HomeStore) _ _ : Async<Control> = async {
 
   return UserControl().content("Home") :> Control
 }

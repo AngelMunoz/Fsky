@@ -9,13 +9,15 @@ open NXUI.FSharp.Extensions
 open Navs
 open Navs.Avalonia
 
-open Library.Env
+open Library
+open Library.Stores
 open Library.Views
 
 module Routes =
 
   let build (env: Env) =
-    AvaloniaRouter([ Route.define<Control>("home", "/", Home.view env) ])
+    let hs = HomeStore.create(env)
+    AvaloniaRouter([ Route.define<Control>("home", "/", Home.view hs) ])
 
 
 type App() =
