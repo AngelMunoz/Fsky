@@ -25,24 +25,10 @@ let Content (router: IRouter<Control>) : Control =
   |> Async.StartImmediate
 
   UserControl()
-    .content(
-      DockPanel()
-        .children(
-          StackPanel()
-            .OrientationHorizontal()
-            .DockTop()
-            .children(
-              Button()
-                .content("Click me!!")
-                .OnClickHandler(fun _ _ -> counter.OnNext(counter.Value + 1)),
-              TextBlock().text(counterText)
-            ),
-          RouterOutlet().DockTop().router(router)
-        )
-    )
+    .content(RouterOutlet().DockTop().router(router))
 
 let Window router =
   Window()
-    .width(420)
-    .height(420)
+    .minWidth(520)
+    .minHeight(520)
     .content(Content router)

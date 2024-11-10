@@ -48,6 +48,9 @@ type Event = {
 
 type BskyJetstream =
 
+  abstract resolveHandle:
+    did: string -> Async<BSky.Model.AppBskyActorDefsProfileViewDetailed option>
+
   abstract toAsyncSeq:
     uri: string * ?cancellationToken: CancellationToken ->
       IAsyncEnumerable<Result<Event, exn * string>>
@@ -85,11 +88,11 @@ module JetStream =
             ws.CloseAsync(
               WebSocketCloseStatus.NormalClosure,
               "Cancelled",
-              token
+              CancellationToken.None
             )
         else
 
-          let buffer = pipe.Writer.GetMemory(512)
+          let buffer = pipe.Writer.GetMemory(1024 * 4)
           let! result = ws.ReceiveAsync(buffer, token)
           pipe.Writer.Advance(result.Count)
 
@@ -131,8 +134,9 @@ module JetStream =
                 |> TaskSeq.iter observer.OnNext
 
               observer.OnCompleted()
-            with ex ->
-              observer.OnError(ex)
+            with
+            | :? OperationCanceledException -> ()
+            | ex -> observer.OnError(ex)
           }
 
           Async.StartImmediate(work, cts.Token)
@@ -144,8 +148,20 @@ module JetStream =
           }
     }
 
-  let create () =
+  let create (bsky: BSky.Api.AppBskyActorApi) =
     { new BskyJetstream with
+        member _.resolveHandle did = async {
+          let! token = Async.CancellationToken
+
+          try
+            let! profile =
+              bsky.AppBskyActorGetProfileAsync(did, cancellationToken = token)
+
+            return Some profile
+          with _ ->
+            return None
+        }
+
         member _.toAsyncSeq(uri, ?token) =
           startListening(Uri(uri), defaultArg token CancellationToken.None)
 
