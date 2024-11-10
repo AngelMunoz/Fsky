@@ -1,12 +1,13 @@
-﻿module Library.Views.Home
+module Library.Views.Home
 
 open Avalonia.Controls
 open NXUI
 open NXUI.Extensions
 open NXUI.FSharp.Extensions
 
+open Library.Env
 
-let view _ _ : Async<Control> = async {
+let view (Jetstream js) _ _ : Async<Control> = async {
 
   return UserControl().content("Home") :> Control
 }
