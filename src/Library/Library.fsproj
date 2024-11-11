@@ -16,11 +16,13 @@
     <Compile Include="Env.fs" />
     <Compile Include="HomeStore.fs" />
     <Compile Include="Views\Home.fs" />
+    <Compile Include="Views\Timelines.fs" />
     <Compile Include="Views/Main.fs" />
     <Compile Include="Library.fs" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Flurl.Http" Version="4.0.2" />
     <PackageReference Include="System.IO.Pipelines" Version="8.0.0" />
     <PackageReference Include="System.Net.WebSockets.Client" Version="4.3.2" />
 

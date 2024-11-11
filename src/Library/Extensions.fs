@@ -1,6 +1,7 @@
-﻿[<AutoOpen>]
+[<AutoOpen>]
 module Library.Extensions
 
+open System
 open Avalonia.Controls
 open Avalonia.Data
 open AsyncImageLoader
@@ -40,4 +41,22 @@ type Image with
         .WithPriority(priority)
 
     this[descriptor] <- binding
+    this
+
+type AdvancedImage with
+
+  member this.Source (value: string) =
+    this[AdvancedImage.SourceProperty] <- value
+    this
+
+  member this.Source (value: Uri) =
+    this[AdvancedImage.SourceProperty] <- value.ToString()
+    this
+
+  member this.Loader (loader: IAsyncImageLoader) =
+    this[AdvancedImage.LoaderProperty] <- loader
+    this
+
+  member this.WebImageLoader() =
+    this[AdvancedImage.LoaderProperty] <- new Loaders.BaseWebImageLoader()
     this

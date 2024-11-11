@@ -1,5 +1,6 @@
 module Library.Views.Home
 
+open AsyncImageLoader
 open Avalonia
 open Avalonia.Data
 open Avalonia.Controls
@@ -19,6 +20,7 @@ open Avalonia.Controls.Templates
 open System
 open Avalonia.Media
 open System.Collections.ObjectModel
+open Navs
 
 type private Border with
   member this.WithTransitions() =
@@ -56,11 +58,12 @@ let private PostCard =
           Border()
             .CornerRadius(75)
             .Child(
-              Image()
-                .AsyncSource(avatar)
+              AdvancedImage(Unchecked.defaultof<Uri>)
+                .WebImageLoader()
                 .Width(32)
                 .Height(32)
                 .Margin(0, 0, 8, 0)
+                .Source(avatar)
             ),
           TextBlock()
             .VerticalAlignmentBottom()
@@ -147,7 +150,7 @@ let private loginForm
     )
 
 
-let view (hs: HomeStore) _ _ : Async<Control> = async {
+let view (hs: HomeStore) _ (nav: INavigable<_>) : Async<Control> = async {
   let! token = Async.CancellationToken
 
   hs.loadPosts(Some token)
@@ -169,6 +172,13 @@ let view (hs: HomeStore) _ _ : Async<Control> = async {
     let { handle = handle; password = password } = hs.credentials.Value
 
     printfn "Login - %s:%s" handle password
+
+    hs.stopPostStream()
+    nav.NavigateByName("timelines")
+    |> Async.AwaitTask
+    |> Async.Ignore
+    |> Async.StartImmediate
+
 
   return
     UserControl()

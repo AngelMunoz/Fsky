@@ -1,6 +1,8 @@
 namespace Library
 
 open System
+open System.Collections.Generic
+open System.IO.Pipelines
 open System.Net.WebSockets
 open System.Net
 open System.Net.Http
@@ -8,11 +10,14 @@ open System.Text.Json
 open System.Text.Json.Serialization
 open System.Threading
 
+open Flurl
+open Flurl.Http
+
 open FSharp.Control
 open IcedTasks
 open IcedTasks.Polyfill.Async
-open System.IO.Pipelines
-open System.Collections.Generic
+
+open FsToolkit.ErrorHandling
 
 type Commit = {
   rev: string
@@ -45,11 +50,105 @@ type Event = {
   identity: Identity option
 }
 
+type Profile = {
+  did: string
+  handle: string
+  displayName: string
+  description: string option
+  avatar: Uri
+  banner: Uri option
+  followersCount: int
+  followsCount: int
+  postsCount: int
+  createdAt: DateTimeOffset
+}
+
+module Profile =
+  let ofJsonDocument (json: JsonDocument) = option {
+    let profile = json.RootElement
+    let did = profile.GetProperty("did").GetString()
+
+    let handle =
+      profile
+        .GetProperty("handle")
+        .GetString()
+
+    let displayName =
+      profile
+        .GetProperty("displayName")
+        .GetString()
+
+    let description =
+      try
+        profile
+          .GetProperty("description")
+          .GetString()
+        |> Some
+      with _ ->
+        None
+
+    let avatar =
+      profile
+        .GetProperty("avatar")
+        .GetString()
+      |> Uri
+
+    let banner =
+      try
+        profile
+          .GetProperty("banner")
+          .GetString()
+        |> Uri
+        |> Some
+      with _ ->
+        None
+
+    let! followersCount =
+      let prop = profile.GetProperty("followersCount")
+
+      match prop.TryGetInt32() with
+      | true, count -> ValueSome count
+      | _ -> ValueNone
+
+    let! followsCount =
+      let prop = profile.GetProperty("followsCount")
+
+      match prop.TryGetInt32() with
+      | true, count -> ValueSome count
+      | _ -> ValueNone
+
+    let! postsCount =
+      let prop = profile.GetProperty("postsCount")
+
+      match prop.TryGetInt32() with
+      | true, count -> ValueSome count
+      | _ -> ValueNone
+
+    let! createdAt =
+      let prop = profile.GetProperty("createdAt")
+
+      match prop.TryGetDateTimeOffset() with
+      | true, time -> ValueSome time
+      | _ -> ValueNone
+
+    return {
+      did = did
+      handle = handle
+      displayName = displayName
+      description = description
+      avatar = avatar
+      banner = banner
+      followersCount = followersCount
+      followsCount = followsCount
+      postsCount = postsCount
+      createdAt = createdAt
+    }
+
+  }
 
 type BskyJetstream =
 
-  abstract resolveHandle:
-    did: string -> Async<BSky.Model.AppBskyActorDefsProfileViewDetailed option>
+  abstract resolveHandle: did: string -> Async<BSky.Model.AppBskyActorDefsProfileViewDetailed option>
 
   abstract toAsyncSeq:
     uri: string * ?cancellationToken: CancellationToken ->

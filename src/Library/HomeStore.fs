@@ -34,7 +34,7 @@ module HomeStore =
   let private (|NotCancelled|_|) (token: CancellationToken option) =
     match token with
     | None -> None
-    | Some token -> if token.IsCancellationRequested then Some() else None
+    | Some token -> if token.IsCancellationRequested then None else Some()
 
 
   let private mapEventToPost value =
@@ -77,7 +77,7 @@ module HomeStore =
         post with
             handle = profile.Handle
             displayName = profile.DisplayName
-            avatar = profile.Avatar
+            avatar = profile.Avatar |> Option.ofObj |> Option.defaultWith(fun _ -> "https://via.placeholder.com/32")
       }
     }
 
@@ -112,10 +112,11 @@ module HomeStore =
     let addToPosts (posts: ObservableCollection<_>) post =
       match post with
       | Some post ->
-        if posts.Count > 30 then
+        if posts.Count >= 10 then
           posts.RemoveAt(posts.Count - 1)
 
         posts.Insert(0, post)
+        printfn "Post Count: %i" posts.Count
       | None -> ()
 
     {
@@ -128,7 +129,7 @@ module HomeStore =
           let events = getEventStream(token)
 
           events
-          |> Observable.bufferCount 30
+          |> Observable.bufferCount 10
           |> Observable.first
           |> Observable.map(fun values ->
             values |> Seq.map(resolveHandle js) |> Async.Parallel
@@ -145,5 +146,7 @@ module HomeStore =
           |> Observable.switchAsync
           |> Observable.add(addToPosts posts)
 
-      stopPostStream = fun () -> resetCts None
+      stopPostStream = fun () ->
+        resetCts None
+        posts.Clear()
     }

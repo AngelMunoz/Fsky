@@ -17,7 +17,10 @@ module Routes =
 
   let build (env: Env) =
     let hs = HomeStore.create(env)
-    AvaloniaRouter([ Route.define<Control>("home", "/", Home.view hs) ])
+    AvaloniaRouter([
+      Route.define("home", "/home", Home.view hs) |> Route.cache NoCache
+      Route.define("timelines", "/", Timelines.view())
+    ])
 
 
 type App() =
