@@ -57,6 +57,7 @@ let private PostCard =
         .Children(
           Border()
             .CornerRadius(75)
+            .ClipToBounds(true)
             .Child(
               AdvancedImage(Unchecked.defaultof<Uri>)
                 .WebImageLoader()

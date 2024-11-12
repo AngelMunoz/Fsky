@@ -20,12 +20,28 @@ open IcedTasks.Polyfill.Async
 
 open FsToolkit.ErrorHandling
 
+type BskyStrongRef = {
+  cid: string; uri: string;
+}
+
+type BskyReplyRef = {
+  root: BskyStrongRef; parent: BskyStrongRef;
+}
+
+// partial post, we don't need all the fields
+type BskFeedPost = {
+  text: string
+  createdAt: DateTimeOffset
+  reply: BskyReplyRef option
+  tags: string list option
+}
+
 type Commit = {
   rev: string
   operation: string
   collection: string
   rkey: string
-  record: JsonNode option
+  record: BskFeedPost option
   cid: string
 }
 

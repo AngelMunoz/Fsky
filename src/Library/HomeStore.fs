@@ -43,19 +43,13 @@ module HomeStore =
 
       let! commit = event.commit |> Result.requireSome ""
       let! record = commit.record |> Result.requireSome ""
-      let record = record.AsObject()
+      let record = record
 
       let did = event.did
 
-      let! text =
-         record |> JsonNode.tryGetProperty "text" |> ValueOption.map(_.GetValue()) |> Result.requireValueSome ""
+      let! text = record.text |> Result.requireNotNull ""
 
-      let! time =
-        record |> JsonNode.tryGetProperty "createdAt" |> Result.requireValueSome "" |> Result.bind(fun v ->
-          match DateTimeOffset.TryParse(v.GetValue<string>()) with
-          | true, time -> Ok time
-          | _ -> Error ""
-        )
+      let time = record.createdAt
 
       return {
         did = did
@@ -116,7 +110,6 @@ module HomeStore =
           posts.RemoveAt(posts.Count - 1)
 
         posts.Insert(0, post)
-        printfn "Post Count: %i" posts.Count
       | None -> ()
 
     {
@@ -124,8 +117,6 @@ module HomeStore =
       posts = posts
       loadPosts =
         fun token ->
-          printfn "Loading posts..."
-
           let events = getEventStream(token)
 
           events

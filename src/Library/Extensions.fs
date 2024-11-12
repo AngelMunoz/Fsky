@@ -6,6 +6,8 @@ open System.Text.Json.Nodes
 open Avalonia.Controls
 open Avalonia.Data
 open AsyncImageLoader
+open Avalonia.Media.Imaging
+open Flurl.Http
 
 type Image with
 
@@ -59,8 +61,20 @@ type AdvancedImage with
     this
 
   member this.WebImageLoader() =
-    this[AdvancedImage.LoaderProperty] <- new Loaders.BaseWebImageLoader()
-    this
+    this.Loader(
+      { new IAsyncImageLoader with
+          member this.ProvideImageAsync(url) = task {
+            try
+              let! response = url.GetAsync()
+              let! image = response.GetStreamAsync()
+              return new Bitmap(image)
+            with _ ->
+              return null
+          }
+
+          member this.Dispose() = ()
+      }
+    )
 
 module JsonNode =
   let inline tryGetProperty (name: string) (json: JsonObject) =
