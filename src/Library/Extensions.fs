@@ -2,6 +2,7 @@
 module Library.Extensions
 
 open System
+open System.Text.Json.Nodes
 open Avalonia.Controls
 open Avalonia.Data
 open AsyncImageLoader
@@ -45,18 +46,24 @@ type Image with
 
 type AdvancedImage with
 
-  member this.Source (value: string) =
+  member this.Source(value: string) =
     this[AdvancedImage.SourceProperty] <- value
     this
 
-  member this.Source (value: Uri) =
+  member this.Source(value: Uri) =
     this[AdvancedImage.SourceProperty] <- value.ToString()
     this
 
-  member this.Loader (loader: IAsyncImageLoader) =
+  member this.Loader(loader: IAsyncImageLoader) =
     this[AdvancedImage.LoaderProperty] <- loader
     this
 
   member this.WebImageLoader() =
     this[AdvancedImage.LoaderProperty] <- new Loaders.BaseWebImageLoader()
     this
+
+module JsonNode =
+  let inline tryGetProperty (name: string) (json: JsonObject) =
+    match json.TryGetPropertyValue name with
+    | true, value -> ValueSome value
+    | _ -> ValueNone

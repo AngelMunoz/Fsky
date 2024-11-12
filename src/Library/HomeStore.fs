@@ -17,7 +17,7 @@ type Post = {
   displayName: string
   avatar: string
   text: string
-  time: DateTime
+  time: DateTimeOffset
 }
 
 type Credentials = { handle: string; password: string }
@@ -43,19 +43,19 @@ module HomeStore =
 
       let! commit = event.commit |> Result.requireSome ""
       let! record = commit.record |> Result.requireSome ""
-      let record = record.RootElement
+      let record = record.AsObject()
 
       let did = event.did
 
       let! text =
-        match record.TryGetProperty("text") with
-        | true, text -> text.GetString() |> Ok
-        | _ -> Error ""
+         record |> JsonNode.tryGetProperty "text" |> ValueOption.map(_.GetValue()) |> Result.requireValueSome ""
 
       let! time =
-        match record.TryGetProperty("createdAt") with
-        | true, time -> time.GetDateTime() |> Ok
-        | _ -> Error ""
+        record |> JsonNode.tryGetProperty "createdAt" |> Result.requireValueSome "" |> Result.bind(fun v ->
+          match DateTimeOffset.TryParse(v.GetValue<string>()) with
+          | true, time -> Ok time
+          | _ -> Error ""
+        )
 
       return {
         did = did
@@ -75,9 +75,9 @@ module HomeStore =
 
       return {
         post with
-            handle = profile.Handle
-            displayName = profile.DisplayName
-            avatar = profile.Avatar |> Option.ofObj |> Option.defaultWith(fun _ -> "https://via.placeholder.com/32")
+            handle = profile.handle
+            displayName = profile.displayName
+            avatar = profile.avatar |> ValueOption.map (_.ToString()) |> ValueOption.defaultWith(fun _ -> "https://via.placeholder.com/32")
       }
     }
 

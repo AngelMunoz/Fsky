@@ -19,8 +19,7 @@ module Env =
   let (|Jetstream|) (env: #Jetstream) = env.Jetstream
 
   let create () =
-    let bsky = BSky.Api.AppBskyActorApi("https://public.api.bsky.app/xrpc")
 
     { new Env with
-        member _.Jetstream = JetStream.create(bsky)
+        member _.Jetstream = JetStream.create()
     }

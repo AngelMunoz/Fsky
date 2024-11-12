@@ -7,6 +7,7 @@ open System.Net.WebSockets
 open System.Net
 open System.Net.Http
 open System.Text.Json
+open System.Text.Json.Nodes
 open System.Text.Json.Serialization
 open System.Threading
 
@@ -24,7 +25,7 @@ type Commit = {
   operation: string
   collection: string
   rkey: string
-  record: JsonDocument option
+  record: JsonNode option
   cid: string
 }
 
@@ -54,82 +55,53 @@ type Profile = {
   did: string
   handle: string
   displayName: string
-  description: string option
-  avatar: Uri
-  banner: Uri option
+  description: string voption
+  avatar: Uri voption
+  banner: Uri voption
   followersCount: int
   followsCount: int
   postsCount: int
   createdAt: DateTimeOffset
 }
 
+
+
 module Profile =
-  let ofJsonDocument (json: JsonDocument) = option {
-    let profile = json.RootElement
-    let did = profile.GetProperty("did").GetString()
 
-    let handle =
-      profile
-        .GetProperty("handle")
-        .GetString()
+  let ofJsonNode (json: JsonNode) = option {
+    let profile = json.AsObject()
+    let! did = profile |> JsonNode.tryGetProperty "did" |> ValueOption.map(_.GetValue())
 
-    let displayName =
-      profile
-        .GetProperty("displayName")
-        .GetString()
+    let! handle =
+      profile |> JsonNode.tryGetProperty "handle" |> ValueOption.map(_.GetValue())
+
+    let! displayName =
+      profile |> JsonNode.tryGetProperty "displayName" |> ValueOption.map(_.GetValue())
 
     let description =
-      try
-        profile
-          .GetProperty("description")
-          .GetString()
-        |> Some
-      with _ ->
-        None
+        profile |> JsonNode.tryGetProperty "description" |> ValueOption.map(_.GetValue())
 
     let avatar =
-      profile
-        .GetProperty("avatar")
-        .GetString()
-      |> Uri
+      profile |> JsonNode.tryGetProperty "avatar" |> ValueOption.map(fun v -> v.GetValue() |> Uri)
 
     let banner =
-      try
-        profile
-          .GetProperty("banner")
-          .GetString()
-        |> Uri
-        |> Some
-      with _ ->
-        None
+        profile |> JsonNode.tryGetProperty "banner" |> ValueOption.map(fun v -> v.GetValue() |> Uri)
 
     let! followersCount =
-      let prop = profile.GetProperty("followersCount")
-
-      match prop.TryGetInt32() with
-      | true, count -> ValueSome count
-      | _ -> ValueNone
+      profile |> JsonNode.tryGetProperty "followersCount" |> ValueOption.map(_.GetValue())
 
     let! followsCount =
-      let prop = profile.GetProperty("followsCount")
-
-      match prop.TryGetInt32() with
-      | true, count -> ValueSome count
-      | _ -> ValueNone
+      profile |> JsonNode.tryGetProperty "followsCount" |> ValueOption.map(_.GetValue())
 
     let! postsCount =
-      let prop = profile.GetProperty("postsCount")
-
-      match prop.TryGetInt32() with
-      | true, count -> ValueSome count
-      | _ -> ValueNone
+      profile |> JsonNode.tryGetProperty "postsCount" |> ValueOption.map(_.GetValue())
 
     let! createdAt =
-      let prop = profile.GetProperty("createdAt")
-
-      match prop.TryGetDateTimeOffset() with
-      | true, time -> ValueSome time
-      | _ -> ValueNone
+      profile |> JsonNode.tryGetProperty "createdAt" |> ValueOption.bind(fun v ->
+        match DateTimeOffset.TryParse(v.GetValue<string>()) with
+        | true, value -> ValueSome value
+        | _ -> ValueNone
+      )
 
     return {
       did = did
@@ -148,7 +120,7 @@ module Profile =
 
 type BskyJetstream =
 
-  abstract resolveHandle: did: string -> Async<BSky.Model.AppBskyActorDefsProfileViewDetailed option>
+  abstract resolveHandle: did: string -> Async<Profile option>
 
   abstract toAsyncSeq:
     uri: string * ?cancellationToken: CancellationToken ->
@@ -247,16 +219,17 @@ module JetStream =
           }
     }
 
-  let create (bsky: BSky.Api.AppBskyActorApi) =
+  let create () =
     { new BskyJetstream with
         member _.resolveHandle did = async {
           let! token = Async.CancellationToken
 
           try
             let! profile =
-              bsky.AppBskyActorGetProfileAsync(did, cancellationToken = token)
+              $"https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor={did}"
+                .GetJsonAsync<JsonNode>(cancellationToken = token)
 
-            return Some profile
+            return Profile.ofJsonNode profile
           with _ ->
             return None
         }
