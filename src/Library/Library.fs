@@ -13,14 +13,15 @@ open Library
 open Library.Stores
 open Library.Views
 
-module Routes =
+module Router =
 
   let build (env: Env) =
-    let hs = HomeStore.create(env)
-    AvaloniaRouter([
-      Route.define("home", "/home", Home.view hs) |> Route.cache NoCache
-      Route.define("timelines", "/", Timelines.view())
-    ])
+    AvaloniaRouter(
+      [
+        Route.define("home", "/home", Home.view env) |> Route.cache NoCache
+        Route.define("timelines", "/", Timelines.view())
+      ]
+    )
 
 
 type App() =
@@ -29,7 +30,7 @@ type App() =
 
   let env = Env.create()
 
-  let router = Routes.build env
+  let router = Router.build env
 
   override this.Initialize() = this.Styles.Add(FluentTheme())
 

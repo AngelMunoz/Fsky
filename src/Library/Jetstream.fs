@@ -20,12 +20,11 @@ open IcedTasks.Polyfill.Async
 
 open FsToolkit.ErrorHandling
 
-type BskyStrongRef = {
-  cid: string; uri: string;
-}
+type BskyStrongRef = { cid: string; uri: string }
 
 type BskyReplyRef = {
-  root: BskyStrongRef; parent: BskyStrongRef;
+  root: BskyStrongRef
+  parent: BskyStrongRef
 }
 
 // partial post, we don't need all the fields
@@ -86,34 +85,54 @@ module Profile =
 
   let ofJsonNode (json: JsonNode) = option {
     let profile = json.AsObject()
-    let! did = profile |> JsonNode.tryGetProperty "did" |> ValueOption.map(_.GetValue())
+
+    let! did =
+      profile |> JsonNode.tryGetProperty "did" |> ValueOption.map(_.GetValue())
 
     let! handle =
-      profile |> JsonNode.tryGetProperty "handle" |> ValueOption.map(_.GetValue())
+      profile
+      |> JsonNode.tryGetProperty "handle"
+      |> ValueOption.map(_.GetValue())
 
     let! displayName =
-      profile |> JsonNode.tryGetProperty "displayName" |> ValueOption.map(_.GetValue())
+      profile
+      |> JsonNode.tryGetProperty "displayName"
+      |> ValueOption.map(_.GetValue())
 
     let description =
-        profile |> JsonNode.tryGetProperty "description" |> ValueOption.map(_.GetValue())
+      profile
+      |> JsonNode.tryGetProperty "description"
+      |> ValueOption.map(_.GetValue())
 
     let avatar =
-      profile |> JsonNode.tryGetProperty "avatar" |> ValueOption.map(fun v -> v.GetValue() |> Uri)
+      profile
+      |> JsonNode.tryGetProperty "avatar"
+      |> ValueOption.map(fun v -> v.GetValue() |> Uri)
 
     let banner =
-        profile |> JsonNode.tryGetProperty "banner" |> ValueOption.map(fun v -> v.GetValue() |> Uri)
+      profile
+      |> JsonNode.tryGetProperty "banner"
+      |> ValueOption.map(fun v -> v.GetValue() |> Uri)
 
     let! followersCount =
-      profile |> JsonNode.tryGetProperty "followersCount" |> ValueOption.map(_.GetValue())
+      profile
+      |> JsonNode.tryGetProperty "followersCount"
+      |> ValueOption.map(_.GetValue())
 
     let! followsCount =
-      profile |> JsonNode.tryGetProperty "followsCount" |> ValueOption.map(_.GetValue())
+      profile
+      |> JsonNode.tryGetProperty "followsCount"
+      |> ValueOption.map(_.GetValue())
 
     let! postsCount =
-      profile |> JsonNode.tryGetProperty "postsCount" |> ValueOption.map(_.GetValue())
+      profile
+      |> JsonNode.tryGetProperty "postsCount"
+      |> ValueOption.map(_.GetValue())
 
     let! createdAt =
-      profile |> JsonNode.tryGetProperty "createdAt" |> ValueOption.bind(fun v ->
+      profile
+      |> JsonNode.tryGetProperty "createdAt"
+      |> ValueOption.bind(fun v ->
         match DateTimeOffset.TryParse(v.GetValue<string>()) with
         | true, value -> ValueSome value
         | _ -> ValueNone
@@ -150,17 +169,14 @@ type BskyJetstream =
 module JetStream =
 
   let private startListening (uri: Uri, token) =
-    let pipe = Pipe()
-
-    let jsonOptions =
-      JsonSerializerOptions(
-        UnmappedMemberHandling = JsonUnmappedMemberHandling.Skip,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-        DictionaryKeyPolicy = JsonNamingPolicy.SnakeCaseLower,
-        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
-      )
-
     taskSeq {
+      let jsonOptions =
+        JsonSerializerOptions(
+          UnmappedMemberHandling = JsonUnmappedMemberHandling.Skip,
+          DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+          DictionaryKeyPolicy = JsonNamingPolicy.SnakeCaseLower,
+          PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+        )
 
       use handler = new SocketsHttpHandler()
       use ws = new ClientWebSocket()
@@ -168,6 +184,8 @@ module JetStream =
       ws.Options.HttpVersionPolicy <- HttpVersionPolicy.RequestVersionOrHigher
 
       do! ws.ConnectAsync(uri, new HttpMessageInvoker(handler), token)
+
+      let pipe = Pipe()
 
       while ws.State = WebSocketState.Open do
         if token.IsCancellationRequested then
@@ -185,6 +203,7 @@ module JetStream =
 
           if result.EndOfMessage then
             let! _ = pipe.Writer.FlushAsync(token)
+            do! pipe.Writer.CompleteAsync()
             let! read = pipe.Reader.ReadAsync(token)
 
             try
@@ -200,12 +219,17 @@ module JetStream =
               Error(ex, json)
 
             pipe.Reader.AdvanceTo(read.Buffer.End)
+            do! pipe.Reader.CompleteAsync()
+            pipe.Reset()
 
       match ws.State with
       | WebSocketState.Aborted ->
         // Notify that we finished abnormally
         failwith "The connection was closed"
       | _ -> ()
+
+      do! pipe.Writer.CompleteAsync()
+      do! pipe.Reader.CompleteAsync()
     }
 
   let private toObservable (uri, token) =
