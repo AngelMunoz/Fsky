@@ -6,7 +6,8 @@ open FSharp.Control.Reactive.Builders
 open Avalonia
 open Avalonia.Controls
 
-open NXUI.FSharp.Extensions
+open NXUI
+open NXUI.Extensions
 open Navs
 open Navs.Avalonia
 
@@ -20,10 +21,10 @@ let Content (router: IRouter<Control>) : Control =
   |> Async.StartImmediate
 
   UserControl()
-    .content(RouterOutlet().DockTop().router(router))
+    .Content(RouterOutlet().DockTop().router(router))
 
 let Window router =
   Window()
-    .minWidth(520)
-    .minHeight(520)
-    .content(Content router)
+    .MinWidth(520)
+    .MinHeight(520)
+    .Content(Content router)

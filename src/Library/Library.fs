@@ -5,7 +5,8 @@ open Avalonia.Controls
 open Avalonia.Controls.ApplicationLifetimes
 open Avalonia.Themes.Fluent
 
-open NXUI.FSharp.Extensions
+open NXUI
+open NXUI.Extensions
 open Navs
 open Navs.Avalonia
 

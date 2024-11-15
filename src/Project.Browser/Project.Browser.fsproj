@@ -1,35 +1,16 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk.WebAssembly">
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
-    <RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
-    <WasmMainJSPath>AppBundle\main.js</WasmMainJSPath>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <OutputType>Exe</OutputType>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="Properties\**" />
-    <None Include="AppBundle\**" />
-    <WasmExtraFilesToDeploy Include="AppBundle\**" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Compile Include="Program.fs" />
   </ItemGroup>
-
   <ItemGroup>
-    <Content Include="runtimeconfig.template.json" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Avalonia" Version="11.0.13" />
-    <PackageReference Include="Avalonia.Browser" Version="11.0.13" />
-    <PackageReference Include="Avalonia.Diagnostics" Version="11.0.13" />
-    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.0.13" />
-    <PackageReference Include="Avalonia.ReactiveUI" Version="11.0.13" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.0.13" />
-    <PackageReference Include="NXUI" Version="11.0.10" />
-    <PackageReference Include="NXUI.FSharp" Version="11.0.10" />
+    <PackageReference Include="Avalonia.Browser" Version="$(AvaloniaVersion)" />
   </ItemGroup>
 
   <ItemGroup>
