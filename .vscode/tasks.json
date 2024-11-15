@@ -2,13 +2,12 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"type": "msbuild",
-			"problemMatcher": [
-				"$msCompile"
-			],
-			"group": "build",
-			"label": "Build: Project.Desktop.fsproj",
-			"detail": "Build the Project.Desktop.fsproj project using dotnet clean"
-		}
+      "label": "My Task",
+      "type": "shell",
+      "command": "dotne build -tl src/Project.Desktop",
+      "problemMatcher": [
+        "$msCompile"
+      ]
+    }
 	]
 }

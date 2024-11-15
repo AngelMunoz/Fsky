@@ -5,6 +5,9 @@ open FSharp.Control.Reactive.Builders
 
 open Avalonia
 open Avalonia.Controls
+#if DEBUG
+open Avalonia.Diagnostics
+#endif
 
 open NXUI
 open NXUI.Extensions
@@ -24,7 +27,12 @@ let Content (router: IRouter<Control>) : Control =
     .Content(RouterOutlet().DockTop().router(router))
 
 let Window router =
-  Window()
-    .MinWidth(520)
-    .MinHeight(520)
-    .Content(Content router)
+  let w = 
+    Window()
+      .MinWidth(520)
+      .MinHeight(520)
+      .Content(Content router)
+  #if DEBUG
+  w .AttachDevTools()
+  #endif
+  w

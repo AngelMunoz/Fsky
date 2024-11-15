@@ -22,7 +22,7 @@ open Library
 open Library.Stores.Home
 
 type private Border with
-  member inline this.WithTransitions() =
+  member this.WithTransitions() =
     this.AttachedToLogicalTree |> Observable.add(fun _ -> this.Opacity <- 0.0)
 
     this.Loaded |> Observable.add(fun _ -> this.Opacity <- 1.0)
@@ -105,15 +105,8 @@ let private PostCard =
     supportsRecycling = true
   )
 
-let inline private postList (addDisposable, posts: ObservableCollection<Post>) =
-  ScrollViewer()
-    .Content(
-      ItemsControl()
-        .ItemsSource(posts)
-        .ItemTemplate(PostCard)
-    )
 
-let inline private loginForm
+let private loginForm
   (credentials, onHandleChanged, onPasswordChanged, onSubmit)
   =
 
@@ -135,13 +128,13 @@ let inline private loginForm
       TextBox()
         .DockTop()
         .Margin(0, 4)
-        .Text(handle)
         .Watermark("@handle")
-        .OnTextChangedHandler(fun sender _ ->
+        .OnTextChangedHandler(fun sender obs ->
           match sender.Text with
           | null -> ()
           | text -> onHandleChanged text
         )
+
         .FontSize(16.0),
       TextBox()
         .DockTop()
@@ -149,7 +142,6 @@ let inline private loginForm
         .PasswordChar('*')
         .Watermark("xxxx-xxxx-xxxx-xxxx")
         .FontSize(16.0)
-        .Text(password)
         .OnTextChangedHandler(fun sender _ ->
           match sender.Text with
           | null -> ()
@@ -209,8 +201,13 @@ let view env =
                 onSubmit
               )
                 .DockLeft(),
-              postList(ctx.addDisposable, hs.posts)
+              ScrollViewer()
                 .DockRight()
+                .Content(
+                  ItemsControl()
+                    .ItemsSource(hs.posts)
+                    .ItemTemplate(PostCard)
+                )
             )
         )
       :> Control

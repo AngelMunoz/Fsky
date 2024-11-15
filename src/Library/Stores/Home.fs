@@ -80,29 +80,11 @@ type HomeStore(js: BskyJetstream) =
   let url =
     "wss://jetstream2.us-east.bsky.network/subscribe?wantedCollections=app.bsky.feed.post"
 
-  let resetCts (token: CancellationToken option) =
-
-    try
-      if not cts.IsCancellationRequested then
-        cts.Cancel()
-
-      cts.Dispose()
-    with _ ->
-      ()
-
-    match token with
-    | Some token & NotCancelled ->
-      cts <- CancellationTokenSource.CreateLinkedTokenSource(token)
-    | Some _
-    | None -> cts <- new CancellationTokenSource()
-
 
   let getEventStream token =
-    resetCts(token)
-
     js.toObservable(
       "wss://jetstream2.us-east.bsky.network/subscribe?wantedCollections=app.bsky.feed.post",
-      cts.Token
+      token
     )
 
   let dispositions = ResizeArray<IDisposable>()
@@ -121,19 +103,16 @@ type HomeStore(js: BskyJetstream) =
 
     let initialLoad =
       events
-      |> TaskSeq.take 20
+      |> TaskSeq.take 10
       |> TaskSeq.chooseAsync(resolveHandle js)
       |> TaskSeq.iterAsync(fun post -> task {
         addToPosts _posts post
-        do! Async.Sleep(2500)
+        let sleep = Random.Shared.Next(1000, 5000)
+        do! Async.Sleep(sleep)
       })
       |> Async.AwaitTask
 
     Async.StartImmediate(initialLoad, ?cancellationToken = token)
-
-  member _.stopPostStream() =
-    resetCts None
-    _posts.Clear()
 
   interface IDisposable with
     member _.Dispose() =
