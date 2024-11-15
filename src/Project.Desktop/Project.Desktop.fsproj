@@ -2,8 +2,9 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <!--If you are willing to use Windows/MacOS native APIs you will need to create 3 projects.
-    One for Windows with net7.0-windows TFM, one for MacOS with net7.0-macos and one with net7.0 TFM for Linux.-->
-    <TargetFramework>net8.0</TargetFramework>
+    One for Windows with 9.0-windows TFM, one for MacOS with 9.0-macos and one with net9.0 TFM for Linux.-->
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
   </PropertyGroup>
 
@@ -16,10 +17,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Avalonia.Desktop" Version="$(AvaloniaVersion)" />
+    <PackageReference Include="Avalonia" Version="11.0.13" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.0.13" />
     <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
-    <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="$(AvaloniaVersion)" />
-    <PackageReference Include="NXUI.Desktop" Version="$(NXUIVersion)" />
+    <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="11.0.13" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.0.13" />
+    <PackageReference Include="Avalonia.ReactiveUI" Version="11.0.13" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.0.13" />
+    <PackageReference Include="NXUI" Version="11.0.10" />
+    <PackageReference Include="NXUI.Desktop" Version="11.0.10" />
+    <PackageReference Include="NXUI.FSharp" Version="11.0.10" />
   </ItemGroup>
 
   <ItemGroup>

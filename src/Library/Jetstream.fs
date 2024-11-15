@@ -3,9 +3,9 @@ namespace Library
 open System
 open System.Collections.Generic
 open System.IO.Pipelines
-open System.Net.WebSockets
 open System.Net
 open System.Net.Http
+open System.Net.WebSockets
 open System.Text.Json
 open System.Text.Json.Nodes
 open System.Text.Json.Serialization
@@ -168,69 +168,71 @@ type BskyJetstream =
 
 module JetStream =
 
-  let private startListening (uri: Uri, token) =
-    taskSeq {
-      let jsonOptions =
-        JsonSerializerOptions(
-          UnmappedMemberHandling = JsonUnmappedMemberHandling.Skip,
-          DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-          DictionaryKeyPolicy = JsonNamingPolicy.SnakeCaseLower,
-          PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
-        )
+  let private startListening (uri: Uri, token) = taskSeq {
+    let jsonOptions =
+      JsonSerializerOptions(
+        UnmappedMemberHandling = JsonUnmappedMemberHandling.Skip,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        DictionaryKeyPolicy = JsonNamingPolicy.SnakeCaseLower,
+        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+      )
 
-      use handler = new SocketsHttpHandler()
-      use ws = new ClientWebSocket()
-      ws.Options.HttpVersion <- HttpVersion.Version20
-      ws.Options.HttpVersionPolicy <- HttpVersionPolicy.RequestVersionOrHigher
+    use handler = new SocketsHttpHandler()
+    use ws = new ClientWebSocket()
+    ws.Options.HttpVersion <- HttpVersion.Version20
+    ws.Options.HttpVersionPolicy <- HttpVersionPolicy.RequestVersionOrHigher
 
-      do! ws.ConnectAsync(uri, new HttpMessageInvoker(handler), token)
+    do! ws.ConnectAsync(uri, new HttpMessageInvoker(handler), token)
 
-      let pipe = Pipe()
+    let pipe = Pipe()
 
-      while ws.State = WebSocketState.Open do
-        if token.IsCancellationRequested then
-          do!
-            ws.CloseAsync(
-              WebSocketCloseStatus.NormalClosure,
-              "Cancelled",
-              CancellationToken.None
-            )
-        else
+    while ws.State = WebSocketState.Open do
+      if token.IsCancellationRequested then
+        do!
+          ws.CloseAsync(
+            WebSocketCloseStatus.NormalClosure,
+            "Cancelled",
+            CancellationToken.None
+          )
+      else
 
-          let buffer = pipe.Writer.GetMemory(1024 * 4)
-          let! result = ws.ReceiveAsync(buffer, token)
-          pipe.Writer.Advance(result.Count)
+        let buffer = pipe.Writer.GetMemory(1024 * 4)
+        let! result = ws.ReceiveAsync(buffer, token)
+        pipe.Writer.Advance(result.Count)
 
-          if result.EndOfMessage then
-            let! _ = pipe.Writer.FlushAsync(token)
-            do! pipe.Writer.CompleteAsync()
-            let! read = pipe.Reader.ReadAsync(token)
+        if result.EndOfMessage then
+          let! _ = pipe.Writer.FlushAsync(token)
+          do! pipe.Writer.CompleteAsync()
+          let! read = pipe.Reader.ReadAsync(token)
 
-            try
-              let result =
-                JsonSerializer.Deserialize<Event>(
-                  read.Buffer.FirstSpan,
-                  jsonOptions
-                )
+          try
+            let result =
+              JsonSerializer.Deserialize<Event>(
+                read.Buffer.FirstSpan,
+                jsonOptions
+              )
 
-              Ok result
-            with ex ->
-              let json = Text.Encoding.UTF8.GetString(read.Buffer.FirstSpan)
-              Error(ex, json)
+            match result with
+            | null -> ()
+            | result -> Ok result
+          with ex ->
+            let json = Text.Encoding.UTF8.GetString(read.Buffer.FirstSpan)
+            Error(ex, json)
 
-            pipe.Reader.AdvanceTo(read.Buffer.End)
-            do! pipe.Reader.CompleteAsync()
-            pipe.Reset()
+          pipe.Reader.AdvanceTo(read.Buffer.End)
+          do! pipe.Reader.CompleteAsync()
+          pipe.Reset()
 
-      match ws.State with
-      | WebSocketState.Aborted ->
-        // Notify that we finished abnormally
-        failwith "The connection was closed"
-      | _ -> ()
+    match ws.State with
+    | WebSocketState.Aborted ->
+      // Notify that we finished abnormally
+      failwith "The connection was closed"
+    | _ -> ()
 
-      do! pipe.Writer.CompleteAsync()
-      do! pipe.Reader.CompleteAsync()
-    }
+    do! pipe.Writer.CompleteAsync()
+    do! pipe.Reader.CompleteAsync()
+    pipe.Reset()
+  }
 
   let private toObservable (uri, token) =
     { new IObservable<_> with

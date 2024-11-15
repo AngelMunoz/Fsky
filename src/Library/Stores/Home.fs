@@ -9,8 +9,6 @@ open FSharp.Control.Reactive
 open FsToolkit.ErrorHandling
 open Library
 open Library.Env
-open System.Reactive.Subjects
-
 
 type Post = {
   did: string
@@ -39,7 +37,7 @@ module private HomeStore =
 
       let did = event.did
 
-      let! text = record.text |> Result.requireNotNull ""
+      let text = record.text
 
       let time = record.createdAt
 

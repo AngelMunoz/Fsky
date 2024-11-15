@@ -19,19 +19,15 @@ open FSharp.Control.Reactive
 open AsyncImageLoader
 open Navs
 open Library
-open Library.Env
-open Library.Stores
+open Library.Stores.Home
 
 type private Border with
   member inline this.WithTransitions() =
-    this.AttachedToLogicalTree
-    |> Observable.add(fun _ -> this.Opacity <- 0.0)
+    this.AttachedToLogicalTree |> Observable.add(fun _ -> this.Opacity <- 0.0)
 
-    this.Loaded
-    |> Observable.add(fun _ -> this.Opacity <- 1.0)
+    this.Loaded |> Observable.add(fun _ -> this.Opacity <- 1.0)
 
-    this.DetachedFromLogicalTree
-    |> Observable.add(fun _ -> this.Opacity <- 0.0)
+    this.DetachedFromLogicalTree |> Observable.add(fun _ -> this.Opacity <- 0.0)
 
     let tr = Transitions()
 
@@ -141,7 +137,11 @@ let inline private loginForm
         .Margin(0, 4)
         .Text(handle)
         .Watermark("@handle")
-        .OnTextChangedHandler(fun sender _ -> onHandleChanged sender.Text)
+        .OnTextChangedHandler(fun sender _ ->
+          match sender.Text with
+          | null -> ()
+          | text -> onHandleChanged text
+        )
         .FontSize(16.0),
       TextBox()
         .DockTop()
@@ -150,7 +150,11 @@ let inline private loginForm
         .Watermark("xxxx-xxxx-xxxx-xxxx")
         .FontSize(16.0)
         .Text(password)
-        .OnTextChangedHandler(fun sender _ -> onPasswordChanged sender.Text),
+        .OnTextChangedHandler(fun sender _ ->
+          match sender.Text with
+          | null -> ()
+          | text -> onPasswordChanged text
+        ),
       Button()
         .DockTop()
         .Content("Authenticate")
