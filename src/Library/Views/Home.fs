@@ -45,7 +45,7 @@ type private Border with
 let private PostCard =
   FuncDataTemplate<Post>(
     (fun post _ ->
-      let time = post.time.ToString("g")
+      let time = post.time.ToString("hh:mm:ss tt - ddd MMMM, yyyy")
       let text = post.text
       let avatar = post.avatar
       let displayName = post.displayName
@@ -162,6 +162,7 @@ let view env =
     let! token = Async.CancellationToken
 
     hs.loadPosts(token)
+
     let credentials = hs.credentials |> Observable.publish
 
     let onHandleChanged handle =
@@ -189,7 +190,6 @@ let view env =
 
     return
       UserControl()
-        .OnUnloadedHandler(fun _ _ -> hs.stopPostStream())
         .Content(
           DockPanel()
             .Margin(8)

@@ -76,8 +76,11 @@ type AdvancedImage with
       }
     )
 
-module JsonNode =
-  let inline tryGetProperty (name: string) (json: JsonObject) =
-    match json.TryGetPropertyValue name with
-    | true, value -> ValueSome value
-    | _ -> ValueNone
+
+module Observable =
+  let inline tap f (source: IObservable<_>) =
+    source
+    |> Observable.map(fun v ->
+      f v
+      v
+    )

@@ -1,1 +1,1 @@
-module Library.Stores.Auth
+namespace Library.Stores

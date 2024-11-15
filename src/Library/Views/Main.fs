@@ -27,12 +27,12 @@ let Content (router: IRouter<Control>) : Control =
     .Content(RouterOutlet().DockTop().router(router))
 
 let Window router =
-  let w = 
+  let w =
     Window()
       .MinWidth(520)
       .MinHeight(520)
       .Content(Content router)
-  #if DEBUG
-  w .AttachDevTools()
-  #endif
+#if DEBUG
+  w.AttachDevTools()
+#endif
   w

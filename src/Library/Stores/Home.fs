@@ -9,6 +9,7 @@ open FSharp.Control.Reactive
 open FsToolkit.ErrorHandling
 open Library
 open Library.Env
+open Library.Services
 
 type Post = {
   did: string
@@ -52,8 +53,8 @@ module private HomeStore =
     }
     |> Result.toOption
 
-  let resolveHandle (js: BskyJetstream) =
-    fun event -> taskOption {
+  let toPost (js: BskyAPI) =
+    fun event -> asyncOption {
       let! post = mapEventToPost event
       let! profile = js.resolveHandle post.did
 
@@ -71,55 +72,37 @@ module private HomeStore =
     }
 
 
-type HomeStore(js: BskyJetstream) =
+type HomeStore(js: BskyJetstream, bs: BskyAPI) =
 
   let _posts = ObservableCollection<Post>()
-  let mutable cts = new CancellationTokenSource()
 
   [<Literal>]
   let url =
     "wss://jetstream2.us-east.bsky.network/subscribe?wantedCollections=app.bsky.feed.post"
 
-
-  let getEventStream token =
-    js.toObservable(
-      "wss://jetstream2.us-east.bsky.network/subscribe?wantedCollections=app.bsky.feed.post",
-      token
-    )
-
-  let dispositions = ResizeArray<IDisposable>()
-
-  let addToPosts (posts: ObservableCollection<_>) post =
-    if posts.Count >= 10 then
-      posts.RemoveAt(posts.Count - 1)
-
-    posts.Insert(0, post)
-
-  member _.credentials = Subject.behavior({ handle = ""; password = "" })
   member _.posts = _posts
 
+  member _.credentials = Subject.behavior({ handle = ""; password = "" })
+
   member _.loadPosts(?token) =
-    let events = js.toAsyncSeq(url, ?cancellationToken = token)
-
-    let initialLoad =
-      events
-      |> TaskSeq.take 10
-      |> TaskSeq.chooseAsync(resolveHandle js)
-      |> TaskSeq.iterAsync(fun post -> task {
-        addToPosts _posts post
-        let sleep = Random.Shared.Next(1000, 5000)
-        do! Async.Sleep(sleep)
+    let work =
+      js.toAsyncSeq(url, ?cancellationToken = token)
+      |> AsyncSeq.take 50
+      |> AsyncSeq.chooseAsync(fun v -> asyncOption {
+        let! result = toPost bs v
+        return result
       })
-      |> Async.AwaitTask
+      |> AsyncSeq.iterAsync(fun post -> async {
+        if _posts.Count < 5 then
+          _posts.Insert(0, post)
+        else
+          do! Async.Sleep(2500)
+          _posts.Insert(0, post)
+      })
 
-    Async.StartImmediate(initialLoad, ?cancellationToken = token)
+    Async.StartImmediate(work, ?cancellationToken = token)
 
   interface IDisposable with
-    member _.Dispose() =
-      cts.Dispose()
+    member _.Dispose() = ()
 
-      for disposition in dispositions do
-        disposition.Dispose()
-
-
-  static member create(Jetstream js) = new HomeStore(js)
+  static member create(Jetstream js & Bluesky bs) = new HomeStore(js, bs)

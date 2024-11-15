@@ -10,7 +10,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Extensions.fs" />
-    <Compile Include="Jetstream.fs" />
+    <Compile Include="Services/BskyAPI.fs" />
+    <Compile Include="Services/Auth.fs" />
+    <Compile Include="Services/Jetstream.fs" />
     <Compile Include="Env.fs" />
     <Compile Include="Stores/Auth.fs" />
     <Compile Include="Stores/Home.fs" />
@@ -27,8 +29,9 @@
     <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
     <PackageReference Include="Avalonia.Diagnostics" Version="$(AvaloniaVersion)">
       <IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
-      <PrivateAssets Condition="'$(Configuration)' != 'Debug'" >all</PrivateAssets>
+      <PrivateAssets Condition="'$(Configuration)' != 'Debug'">all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="FSharp.Control.AsyncSeq" Version="3.2.1" />
 
     <PackageReference Include="Navs" Version="$(NavsVersion)" />
     <PackageReference Include="Navs.Avalonia" Version="$(NavsVersion)" />
@@ -42,7 +45,6 @@
 
     <PackageReference Include="IcedTasks" Version="0.11.7" />
     <PackageReference Include="FSharp.Control.Reactive" Version="5.0.5" />
-    <PackageReference Include="FSharp.Control.TaskSeq" Version="0.4.0" />
     <PackageReference Include="Fstoolkit.ErrorHandling" Version="4.18.0" />
   </ItemGroup>
 </Project>
