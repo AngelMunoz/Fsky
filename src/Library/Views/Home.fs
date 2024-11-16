@@ -87,7 +87,7 @@ let private PostCard =
         .Padding(8)
         .CornerRadius(4)
         .BorderBrush(Brushes.SlateGray)
-        .BorderThickness(1, 0, 0, 2)
+        .BorderThickness(1, 1, 1, 2)
         .Margin(0, 0, 0, 8)
         .BoxShadow(BoxShadows(BoxShadow.Parse("10 10 20 0 White")))
         .Child(
