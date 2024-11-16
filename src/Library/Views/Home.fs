@@ -45,7 +45,11 @@ type private Border with
 let private PostCard =
   FuncDataTemplate<Post>(
     (fun post _ ->
-      let time = post.time.ToLocalTime().ToString("hh:mm:ss tt - ddd MMMM, yyyy")
+      let time =
+        post.time
+          .ToLocalTime()
+          .ToString("hh:mm:ss tt - ddd MMMM, yyyy")
+
       let text = post.text
       let avatar = post.avatar
       let displayName = post.displayName
@@ -106,13 +110,7 @@ let private PostCard =
   )
 
 
-let private loginForm
-  (credentials, onHandleChanged, onPasswordChanged, onSubmit)
-  =
-
-  let handle = credentials |> Observable.map _.handle
-  let password = credentials |> Observable.map _.password
-
+let private loginForm (onHandleChanged, onPasswordChanged, onSubmit) =
   DockPanel()
     .Margin(0, 0, 4, 0)
     .MaxWidth(420)
@@ -163,8 +161,6 @@ let view env =
 
     hs.loadPosts(token)
 
-    let credentials = hs.credentials |> Observable.publish
-
     let onHandleChanged handle =
       hs.credentials.OnNext {
         handle = handle
@@ -194,12 +190,7 @@ let view env =
           DockPanel()
             .Margin(8)
             .Children(
-              loginForm(
-                credentials,
-                onHandleChanged,
-                onPasswordChanged,
-                onSubmit
-              )
+              loginForm(onHandleChanged, onPasswordChanged, onSubmit)
                 .DockLeft(),
               ScrollViewer()
                 .DockRight()
