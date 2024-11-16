@@ -32,6 +32,7 @@ type BskyJetstream =
       AsyncSeq<Result<Event, exn * string>>
 
 module JetStream =
+  open type System.Text.Encoding
 
   let private jetstreamAsAsyncSeq (uri: Uri, token) =
 
@@ -51,12 +52,21 @@ module JetStream =
       let! read = reader.ReadAsync(token)
 
       try
-        let bytes = ReadOnlySpan(read.Buffer.ToArray())
+        let bufferBytes = read.Buffer.ToArray()
+        let bytes = ReadOnlySpan(bufferBytes)
 
         let result = JsonSerializer.Deserialize<Event>(bytes)
         reader.AdvanceTo(read.Buffer.End)
         do! reader.CompleteAsync()
-        return Ok result
+
+        match result with
+        | null ->
+          return
+            Error(
+              exn "Failed to deserialize event",
+              UTF8.GetString(ReadOnlySpan(bufferBytes))
+            )
+        | event -> return Ok event
       with ex ->
         let json = Text.Encoding.UTF8.GetString(read.Buffer.FirstSpan)
         return (Error(ex, json))
