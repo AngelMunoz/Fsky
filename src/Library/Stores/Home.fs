@@ -87,7 +87,7 @@ type HomeStore(js: BskyJetstream, bs: BskyAPI) =
   member _.loadPosts(?token) =
     let work =
       js.toAsyncSeq(url, ?cancellationToken = token)
-      |> AsyncSeq.take 50
+      |> AsyncSeq.take 25
       |> AsyncSeq.chooseAsync(fun v -> asyncOption {
         let! result = toPost bs v
         return result
@@ -95,6 +95,7 @@ type HomeStore(js: BskyJetstream, bs: BskyAPI) =
       |> AsyncSeq.iterAsync(fun post -> async {
         if _posts.Count < 5 then
           _posts.Insert(0, post)
+          do! Async.Sleep(750)
         else
           do! Async.Sleep(2500)
           _posts.Insert(0, post)

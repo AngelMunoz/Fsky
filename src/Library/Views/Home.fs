@@ -45,7 +45,7 @@ type private Border with
 let private PostCard =
   FuncDataTemplate<Post>(
     (fun post _ ->
-      let time = post.time.ToString("hh:mm:ss tt - ddd MMMM, yyyy")
+      let time = post.time.ToLocalTime().ToString("hh:mm:ss tt - ddd MMMM, yyyy")
       let text = post.text
       let avatar = post.avatar
       let displayName = post.displayName
