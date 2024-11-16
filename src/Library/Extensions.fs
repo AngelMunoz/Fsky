@@ -8,6 +8,7 @@ open Avalonia.Data
 open AsyncImageLoader
 open Avalonia.Media.Imaging
 open Flurl.Http
+open FsToolkit.ErrorHandling
 
 type Image with
 
@@ -78,9 +79,40 @@ type AdvancedImage with
 
 
 module Observable =
-  let inline tap f (source: IObservable<_>) =
+  let inline tap ([<InlineIfLambda>] f) (source: IObservable<_>) =
     source
     |> Observable.map(fun v ->
       f v
       v
     )
+
+module JsonNode =
+  let getOptJsonObject (name: string) (json: JsonObject) = voption {
+    match json.TryGetPropertyValue name with
+    | true, value -> return value
+    | _ -> return! ValueNone
+  }
+
+  let tryGetProperty<'T> (name: string) (object: JsonObject) = result {
+    match object.TryGetPropertyValue name with
+    | true, did ->
+      let value = did.AsValue()
+
+      match value.TryGetValue<'T>() with
+      | true, value -> return value
+      | false, _ ->
+        return!
+          Error
+            $"Unable to cast '%s{value.ToJsonString()}' as type '%s{typeof<'T>.ToString()}'"
+    | false, _ ->
+      return!
+        Error $"Unable to get '%s{name}' property in %s{object.ToJsonString()}"
+  }
+
+module DateTimeOffset =
+
+  let tryOfString (value: string) = voption {
+    match DateTimeOffset.TryParse(value) with
+    | true, value -> return value
+    | false, _ -> return! ValueNone
+  }
