@@ -135,6 +135,25 @@ module AppBskyFeedGetFeed =
     text: string
   }
 
+  module PostRecord =
+
+    let ofJsonNode (node: JsonNode) = validation {
+      let doc = node.AsObject()
+      let! type' = JsonNode.tryGetProperty<string> "$type" doc
+      and! langs = JsonNode.tryGetPropertySeq<string> "langs" doc
+      and! text = JsonNode.tryGetProperty<string> "text" doc
+
+      let! createdAt = JsonNode.tryGetProperty<string> "createdAt" doc |> Result.map DateTimeOffset.tryOfString
+      let! createdAt = createdAt |> Result.requireValueSome "Unable to convert createdAt"
+
+      return {
+        ``$type`` = type'
+        createdAt = createdAt
+        langs = langs
+        text = text
+      }
+    }
+
   type Post = {
     uri: Uri
     cid: string

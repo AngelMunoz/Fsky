@@ -2,28 +2,16 @@ namespace Library.Services
 
 open System
 open System.Buffers
-open System.Collections.Generic
-open System.ComponentModel
 open System.IO.Pipelines
-open System.Net
-open System.Net.Http
 open System.Net.WebSockets
 open System.Text.Json
-open System.Text.Json.Nodes
-open System.Text.Json.Serialization
 open System.Threading
-
-open Flurl
-open Flurl.Http
 
 open FSharp.Control
 open IcedTasks
 open IcedTasks.Polyfill.Async
 
-open FsToolkit.ErrorHandling
-
-open Library
-open Microsoft.FSharp.NativeInterop
+open Library.Services.JetstreamTypes
 
 type BskyJetstream =
 

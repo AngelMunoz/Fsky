@@ -10,6 +10,7 @@ open FsToolkit.ErrorHandling
 open Library
 open Library.Env
 open Library.Services
+open Library.Services.JetstreamTypes
 
 type Post = {
   did: string

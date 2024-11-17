@@ -96,6 +96,7 @@ module JsonNode =
   let tryGetProperty<'T> (name: string) (object: JsonObject) = result {
     match object.TryGetPropertyValue name with
     | true, did ->
+      let! did = did |> Result.requireNotNull $"Property '%s{name}' was null."
       let value = did.AsValue()
 
       match value.TryGetValue<'T>() with
@@ -104,6 +105,38 @@ module JsonNode =
         return!
           Error
             $"Unable to cast '%s{value.ToJsonString()}' as type '%s{typeof<'T>.ToString()}'"
+    | false, _ ->
+      return!
+        Error $"Unable to get '%s{name}' property in %s{object.ToJsonString()}"
+  }
+
+  let tryGetPropertySeq<'T> (name: string) (object: JsonObject) = result {
+    match object.TryGetPropertyValue name with
+    | true, value ->
+      let! value =
+        value |> Result.requireNotNull $"Property '%s{name}' was null."
+
+      return!
+        value.AsArray()
+        |> Seq.mapi(fun i value -> result {
+          let! value =
+            value
+            |> Result.requireNotNull $"'%s{name}'s' element at '{i}' was null."
+
+          let value = value.AsValue()
+
+          match value.TryGetValue<'T>() with
+          | true, value ->
+            match value with
+            | null -> return! Error $"Casting element at '%i{i}' resulted in null."
+            | value -> return value
+          | false, _ ->
+            return!
+              Error
+                $"Unable to cast '%s{value.ToJsonString()}' as type '%s{typeof<'T>.ToString()}'"
+        })
+        |> Seq.traverseResultA(id)
+        |> Result.mapError(String.concat ",")
     | false, _ ->
       return!
         Error $"Unable to get '%s{name}' property in %s{object.ToJsonString()}"
